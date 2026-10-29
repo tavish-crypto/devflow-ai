@@ -13,14 +13,22 @@
     "format:check": "prettier --check .",
     "typecheck": "pnpm -r typecheck",
     "test": "vitest run",
-    "test:db": "node scripts/test-db.mjs"
+    "test:db": "node scripts/test-db.mjs",
+    "test:e2e": "playwright test",
+    "test:extension": "playwright test --project=extension"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^24.0.0",
     "embedded-postgres": "18.4.0-beta.17",
     "eslint": "^9.0.0",
+    "jsdom": "^27.2.0",
     "pg": "^8.16.0",
     "prettier": "^3.0.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.0.0",
     "vitest": "5.0.5"

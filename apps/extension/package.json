@@ -8,9 +8,11 @@
     "typecheck": "wxt prepare && tsc --noEmit"
   },
   "dependencies": {
+    "zod": "4.6.7",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "@devflow/contracts": "workspace:*"
+    "@devflow/contracts": "workspace:*",
+    "@devflow/product": "workspace:*"
   },
   "devDependencies": {
     "wxt": "0.21.5",

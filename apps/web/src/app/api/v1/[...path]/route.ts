@@ -11,6 +11,8 @@ import {
   PairingConfirmSchema,
   PairingStatusSchema,
   PairingRevokeSchema,
+  AccountResponseSchema,
+  DisconnectRequestSchema,
 } from "@devflow/contracts";
 import { analyze } from "../../../../lib/ai";
 import {
@@ -85,7 +87,7 @@ async function dispatch(request: Request) {
       pairingId: data.id,
       code,
       pollingSecret,
-      expiresAt: data.expires_at,
+      expiresAt: new Date(data.expires_at).toISOString(),
     };
   }
   if (path === "pairing/status" && method === "POST") {
@@ -105,13 +107,58 @@ async function dispatch(request: Request) {
         "Pairing expired, invalid or already exchanged",
       );
     return data.status === "approved"
-      ? { ...data, token, scopes: ["analyze", "issues:read", "issues:write"] }
+      ? {
+          ...data,
+          expiresAt: new Date(data.expiresAt).toISOString(),
+          token,
+          scopes: ["analyze", "issues:read", "issues:write"],
+        }
       : data;
   }
   const extensionAllowed =
     path === "analyze" || path === "issues" || /^issues\/[^/]+$/.test(path);
   const actor = await authenticate(request, extensionAllowed);
   await rateLimit(`user:${actor.userId}`, 60);
+  if (path === "account" && method === "GET") {
+    const db = admin();
+    const sessions = dbResult(
+      await db
+        .from("extension_sessions")
+        .select("id,expires_at,revoked_at")
+        .eq("user_id", actor.userId)
+        .order("created_at", { ascending: false })
+        .limit(50),
+    );
+    const connection = dbResult(
+      await db
+        .from("github_connections")
+        .select("user_id")
+        .eq("user_id", actor.userId)
+        .maybeSingle(),
+    );
+    const {
+      data: { user },
+    } = await actor.db.auth.getUser();
+    return AccountResponseSchema.parse({
+      email: user?.email ?? null,
+      githubConnected: !!connection,
+      sessions: (sessions ?? []).map((s) => ({
+        id: s.id,
+        expiresAt: new Date(s.expires_at).toISOString(),
+        revokedAt: s.revoked_at ? new Date(s.revoked_at).toISOString() : null,
+      })),
+    });
+  }
+  if (path === "github/disconnect" && method === "POST") {
+    DisconnectRequestSchema.parse(await readBody(request));
+    dbResult(
+      await admin()
+        .from("github_connections")
+        .delete()
+        .eq("user_id", actor.userId),
+    );
+    return { disconnected: true };
+  }
   if (path === "analyze" && method === "POST") {
     const body = AnalyzeRequestSchema.parse(await readBody(request));
     await rateLimit(`analyze:${actor.userId}`, 10);

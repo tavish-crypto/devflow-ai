@@ -173,3 +173,26 @@ export const PairingStatusResponseSchema = z.discriminatedUnion("status", [
 export const ReconcileRequestSchema = z
   .object({ confirmed: z.literal(true) })
   .strict();
+export const AccountResponseSchema = z
+  .object({
+    email: z.string().nullable(),
+    githubConnected: z.boolean(),
+    sessions: z
+      .array(
+        z
+          .object({
+            id: z.uuid(),
+            expiresAt: z.iso.datetime(),
+            revokedAt: z.iso.datetime().nullable(),
+          })
+          .strict(),
+      )
+      .max(50),
+  })
+  .strict();
+export const DisconnectRequestSchema = z
+  .object({ confirmed: z.literal(true) })
+  .strict();
+export const DisconnectResponseSchema = z
+  .object({ disconnected: z.literal(true) })
+  .strict();
