@@ -33,6 +33,7 @@ test("unpacked extension pairing, actual selected-text capture, analysis, persis
   const context = await chromium.launchPersistentContext("", {
     channel: process.env.DEVFLOW_TEST_CHANNEL || "chromium",
     headless: true,
+    executablePath: process.env.DEVFLOW_TEST_EXECUTABLE_PATH,
     viewport: { width: 380, height: 850 },
     reducedMotion: "reduce",
     ignoreDefaultArgs: ["--disable-extensions"],

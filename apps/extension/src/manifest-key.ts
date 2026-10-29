@@ -1,0 +1,4 @@
+// Public development identity only. Keep stable for unpacked installs; no private key is stored.
+export const DEVFLOW_MANIFEST_KEY =
+  "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4b6G3L3FZUl7S4Ec8gpgxhKO4r5Bo0C8OCIqjlEeS1Elq5mCgtWcIi0dz1qX0tMZJDZwMu8jP4BtrdSMXc1k2HSGLnbRePkm0rWmtSTziUW5Tjk/rWLof/dmJmWF689SPDPuLj5AFu6kOyu5YLPnrXw4/NRX8Gh6S6OD7nTP0WviaLBu1NAoxPzC0kG1m9h/O7YETv/9C/DjuBnwINVf9fNH9UFBvA3N3+35eI3GTaVqqZHzZf3vwNThB5L2nBtqI+qLpdhLVXb+txgCURP+DCrUQOglvogpx2nfMqyQgnqeq3OnDYH9WCQ7y43LMmhwT1F16C2l3vse8p3WYUtSjwIDAQAB";
+export const DEVFLOW_EXTENSION_ID = "ffklofmcljpnkoaoooepnkckffnbkdeg";

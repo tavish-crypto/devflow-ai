@@ -1,4 +1,5 @@
 import { defineConfig } from "wxt";
+import { DEVFLOW_MANIFEST_KEY } from "./src/manifest-key";
 const backend = new URL(
   process.env.VITE_DEVFLOW_APP_URL || "http://localhost:3000",
 );
@@ -16,6 +17,7 @@ export default defineConfig({
   }),
   manifest: {
     name: "DevFlow AI",
+    key: DEVFLOW_MANIFEST_KEY,
     description: "Capture evidence for user-reviewed issue reports.",
     permissions: ["activeTab", "scripting", "sidePanel", "storage"],
     host_permissions: [`${backend.origin}/*`],

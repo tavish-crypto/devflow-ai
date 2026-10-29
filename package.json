@@ -15,7 +15,9 @@
     "test": "vitest run",
     "test:db": "node scripts/test-db.mjs",
     "test:e2e": "playwright test",
-    "test:extension": "playwright test --project=extension"
+    "test:extension": "playwright test --project=extension",
+    "release:preflight": "node scripts/release-preflight.mjs",
+    "package:extension": "node scripts/package-extension.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",

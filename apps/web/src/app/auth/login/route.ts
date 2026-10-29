@@ -21,6 +21,15 @@ export async function POST(request: Request) {
       email,
       options: { emailRedirectTo: `${appOrigin()}/auth/callback` },
     });
+    if (error?.code === "over_email_send_rate_limit")
+      return NextResponse.json(
+        {
+          code: "email_rate_limited",
+          message:
+            "Email sending limit reached. Please wait before requesting another sign-in link.",
+        },
+        { status: 429 },
+      );
     if (error)
       return NextResponse.json(
         { code: "login_failed", message: "Unable to send magic link" },
