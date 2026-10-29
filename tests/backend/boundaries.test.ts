@@ -11,7 +11,7 @@ describe("secret module boundaries", () => {
   );
   it.each([
     "apps/web/src/app/ui.tsx",
-    "apps/extension/entrypoints/popup/main.tsx",
+    "apps/extension/entrypoints/sidepanel/main.tsx",
   ])("keeps provider/admin secrets out of %s", (path) => {
     const source = readFileSync(path, "utf8");
     expect(source).not.toMatch(

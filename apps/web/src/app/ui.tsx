@@ -1,334 +1,337 @@
 "use client";
-import { useEffect, useState } from "react";
-import type { Issue, IssueReport, Repository } from "@devflow/contracts";
-async function api(path: string, body?: unknown, method?: string) {
-  const r = await fetch(`/api/v1/${path}`, {
-    method: method || (body ? "POST" : "GET"),
-    headers: body ? { "Content-Type": "application/json" } : {},
-    ...(body ? { body: JSON.stringify(body) } : {}),
-  });
-  const data = await r.json();
-  if (!r.ok) throw new Error(data.message || "Request failed");
-  return data;
-}
-export default function Dashboard() {
-  const [message, setMessage] = useState(
-    "Sign in to load your private dashboard.",
+import { useEffect, useMemo, useState } from "react";
+import type { Issue, Repository } from "@devflow/contracts";
+import { createApi, messageOf } from "@devflow/product/api";
+import {
+  Badge,
+  Button,
+  Busy,
+  Notice,
+  IssueList,
+  Transition,
+  FileText,
+  Github,
+  Clock3,
+  CheckCircle2,
+  Plus,
+  ArrowUpRight,
+  Search,
+  Fingerprint,
+} from "@devflow/product";
+const api = createApi();
+export function filterIssues(
+  issues: Issue[],
+  search: string,
+  status: string,
+  priority: string,
+  repo: string,
+) {
+  return issues.filter(
+    (i) =>
+      (!search ||
+        `${i.report.title} ${i.report.summary}`
+          .toLowerCase()
+          .includes(search.toLowerCase())) &&
+      (!status || i.status === status) &&
+      (!priority || i.report.priority === priority) &&
+      (!repo || `${i.repoOwner}/${i.repoName}` === repo),
   );
-  const [issues, setIssues] = useState<Issue[]>([]);
-  const [repos, setRepos] = useState<Repository[]>([]);
-  const [repo, setRepo] = useState("");
-  const [report, setReport] = useState("");
-  const [capture, setCapture] = useState({
-    pageTitle: "",
-    url: "",
-    selectedText: "",
-    userNotes: "",
-  });
-  const [consent, setConsent] = useState(false);
-  const [code, setCode] = useState("");
-  const [sessionId, setSessionId] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [capturedAt, setCapturedAt] = useState("");
-  async function run(task: () => Promise<void>) {
-    setBusy(true);
-    try {
-      await task();
-    } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Request failed");
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function load() {
-    setIssues((await api("issues")).issues);
-    setMessage("Dashboard loaded.");
-  }
+}
+export default function Dashboard({
+  view = "overview",
+}: {
+  view?: "overview" | "issues";
+}) {
+  const [issues, setIssues] = useState<Issue[]>([]),
+    [repos, setRepos] = useState<Repository[]>([]),
+    [loading, setLoading] = useState(true),
+    [error, setError] = useState(""),
+    [repoError, setRepoError] = useState(""),
+    [reload, setReload] = useState(0);
+  const [search, setSearch] = useState(""),
+    [status, setStatus] = useState(""),
+    [priority, setPriority] = useState(""),
+    [repo, setRepo] = useState("");
   useEffect(() => {
-    void api("issues")
+    const controller = new AbortController();
+    setLoading(true);
+    setError("");
+    api
+      .issues(controller.signal)
       .then((d) => setIssues(d.issues))
-      .catch(() => {});
-  }, []);
+      .catch((e) => {
+        if (!controller.signal.aborted) setError(messageOf(e));
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    api
+      .repositories(controller.signal)
+      .then((d) => {
+        setRepos(d.repositories);
+        setRepoError("");
+      })
+      .catch((e) => {
+        if (!controller.signal.aborted) setRepoError(messageOf(e));
+      });
+    return () => controller.abort();
+  }, [reload]);
+  const filtered = useMemo(
+    () => filterIssues(issues, search, status, priority, repo),
+    [issues, search, status, priority, repo],
+  );
+  const repoNames = [
+    ...new Set(
+      issues
+        .filter((i) => i.repoOwner)
+        .map((i) => `${i.repoOwner}/${i.repoName}`),
+    ),
+  ];
+  if (loading) return <Busy />;
   return (
-    <main>
-      <h1>DevFlow AI</h1>
-      <p>
-        Browser evidence → reviewed analysis → editable ProofPack → confirmed
-        GitHub issue.
-      </p>
-      <p role="status">{message}</p>
-      <section>
-        <h2>Sign in</h2>
-        <form action="/auth/login" method="post">
-          <label>
-            Email
-            <input name="email" type="email" required />
-          </label>
-          <button>Send magic link</button>
-        </form>
-        <button disabled={busy} onClick={() => void run(load)}>
-          Refresh dashboard
-        </button>
-      </section>
-      <section>
-        <h2>GitHub integration</h2>
-        <a href="/api/github/install">Install GitHub App</a>
-        <a href="/api/github/authorize">Authorize GitHub account</a>
-        <button
-          disabled={busy}
-          onClick={() =>
-            void run(async () =>
-              setRepos((await api("github/repositories")).repositories),
-            )
-          }
-        >
-          Load authorized repositories
-        </button>
-        <label>
-          Repository
-          <select value={repo} onChange={(e) => setRepo(e.target.value)}>
-            <option value="">Choose before publishing</option>
-            {repos.map((r) => (
-              <option key={r.fullName}>{r.fullName}</option>
-            ))}
-          </select>
-        </label>
-      </section>
-      <section>
-        <h2>Review capture</h2>
-        <p>
-          Remove passwords, keys, private account data and sensitive page text.
-          Selected text will be sent to Gemini only with your consent.
-        </p>
-        {Object.entries(capture).map(([key, value]) => (
-          <label key={key}>
-            {key}
-            <textarea
-              value={value}
-              onChange={(e) => {
-                setCapture({ ...capture, [key]: e.target.value });
-                setConsent(false);
-                setReport("");
-                setCapturedAt("");
-              }}
-            />
-          </label>
-        ))}
-        <label>
-          <input
-            type="checkbox"
-            checked={consent}
-            onChange={(e) => setConsent(e.target.checked)}
-          />{" "}
-          I reviewed and redacted this capture and consent to server-side
-          analysis.
-        </label>
-        <button
-          disabled={busy || !consent}
-          onClick={() =>
-            void run(async () => {
-              const timestamp = new Date().toISOString();
-              const d = await api("analyze", {
-                capture: {
-                  ...capture,
-                  capturedAt: timestamp,
-                },
-                consent: true,
-              });
-              setCapturedAt(timestamp);
-              setReport(JSON.stringify(d.report, null, 2));
-              setMessage(`Analysis mode: ${d.mode}. Review every field.`);
-            })
-          }
-        >
-          Analyze evidence
-        </button>
-        {report && (
-          <>
-            <label>
-              Editable ProofPack (JSON)
-              <textarea
-                rows={24}
-                value={report}
-                onChange={(e) => setReport(e.target.value)}
-              />
-            </label>
-            <button
-              disabled={busy}
-              onClick={() =>
-                void run(async () => {
-                  const [repoOwner, repoName] = repo.split("/");
-                  await api("issues", {
-                    report: JSON.parse(report) as IssueReport,
-                    capture: {
-                      ...capture,
-                      capturedAt: capturedAt || new Date().toISOString(),
-                    },
-                    ...(repo ? { repoOwner, repoName } : {}),
-                  });
-                  await load();
-                })
-              }
-            >
-              Save draft
-            </button>
-          </>
-        )}
-      </section>
-      <section>
-        <h2>Persistent issues</h2>
-        {issues.length === 0 && <p>No issues loaded.</p>}
-        {issues.map((issue) => (
-          <article key={issue.id}>
-            <h3>{issue.report.title}</h3>
-            <p>
-              {issue.status} · {issue.repoOwner}/{issue.repoName}
-            </p>
-            <details>
-              <summary>Review report and evidence</summary>
-              <pre>{JSON.stringify(issue.report, null, 2)}</pre>
-            </details>
-            {["draft", "failed"].includes(issue.status) && (
-              <>
-                <button
-                  disabled={busy}
-                  onClick={() => {
-                    setReport(JSON.stringify(issue.report, null, 2));
-                    void run(async () => {
-                      const edited = window.prompt(
-                        "Edit report JSON",
-                        JSON.stringify(issue.report),
-                      );
-                      if (edited) {
-                        const [repoOwner, repoName] = repo.split("/");
-                        await api(
-                          `issues/${issue.id}`,
-                          {
-                            report: JSON.parse(edited),
-                            ...(repo ? { repoOwner, repoName } : {}),
-                          },
-                          "PATCH",
-                        );
-                        await load();
-                      }
-                    });
-                  }}
-                >
-                  Edit saved draft / set repository
-                </button>
-                <button
-                  disabled={busy}
-                  onClick={() =>
-                    void run(async () => {
-                      const d = await api(
-                        `github/duplicates?${new URLSearchParams({ owner: issue.repoOwner || "", repo: issue.repoName || "", title: issue.report.title })}`,
-                      );
-                      setMessage(
-                        `Duplicate candidates (heuristic): ${JSON.stringify(d.candidates)}`,
-                      );
-                    })
-                  }
-                >
-                  Check duplicates
-                </button>
-                <button
-                  disabled={busy}
-                  onClick={() =>
-                    void run(async () => {
-                      if (
-                        !window.confirm(
-                          "Create this reviewed issue in GitHub? This action is public to the selected repository.",
-                        )
-                      )
-                        return;
-                      const storageKey = `devflow:publish:${issue.id}`;
-                      const key =
-                        localStorage.getItem(storageKey) || crypto.randomUUID();
-                      localStorage.setItem(storageKey, key);
-                      const result = await api(`issues/${issue.id}/publish`, {
-                        idempotencyKey: key,
-                        confirmed: true,
-                      });
-                      await load();
-                      setMessage(`Publish result: ${result.remoteResult}`);
-                    })
-                  }
-                >
-                  Confirm and publish
-                </button>
-              </>
-            )}
-            {["publish_unknown", "publishing"].includes(issue.status) && (
-              <button
-                disabled={busy}
-                onClick={() =>
-                  void run(async () => {
-                    const result = await api(`issues/${issue.id}/reconcile`, {
-                      confirmed: true,
-                    });
-                    await load();
-                    setMessage(`Reconciliation: ${result.remoteResult}`);
-                  })
+    <Transition>
+      <div className="page-heading">
+        <div>
+          <span className="eyebrow">YOUR DEVELOPER COMMAND CENTER</span>
+          <h1 className="mt-2">
+            {view === "overview"
+              ? "A little context. A lot of clarity."
+              : "Every issue. All the evidence."}
+          </h1>
+          <p>
+            {view === "overview"
+              ? "Your reports, from first capture to published issue."
+              : "Find, refine, and follow your ProofPacks."}
+          </p>
+        </div>
+        <Button asChild>
+          <a href="/dashboard/new">
+            <Plus size={15} />
+            Capture issue
+          </a>
+        </Button>
+      </div>
+      {error ? (
+        <div className="stack">
+          <Notice tone="error">{error}</Notice>
+          <Button variant="secondary" onClick={() => setReload(reload + 1)}>
+            Reload workspace
+          </Button>
+        </div>
+      ) : (
+        <>
+          {view === "overview" && (
+            <div className="kpis">
+              {[
+                [
+                  "Reports in workspace",
+                  issues.length,
+                  "Latest 100 saved reports",
+                  FileText,
+                ],
+                [
+                  "Published to GitHub",
+                  issues.filter((i) => i.status === "published").length,
+                  "Verified publication links",
+                  CheckCircle2,
+                ],
+                [
+                  "Drafts in progress",
+                  issues.filter((i) => i.status === "draft").length,
+                  "Ready when you are",
+                  Clock3,
+                ],
+              ].map(([label, count, note, Icon]) => {
+                const I = Icon as typeof FileText;
+                return (
+                  <div className="kpi" key={String(label)}>
+                    <div className="kpi-head">
+                      {String(label)}
+                      <I size={17} />
+                    </div>
+                    <strong>{String(count)}</strong>
+                    <small>{String(note)}</small>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <div className={view === "overview" ? "overview-grid" : ""}>
+            <section className="panel">
+              <div className="panel-header">
+                <div>
+                  <h3>
+                    {view === "overview" ? "Recent reports" : "Issue explorer"}
+                  </h3>
+                  <p>
+                    {view === "overview"
+                      ? "Pick up where you left off."
+                      : "Private to your account · newest first"}
+                  </p>
+                </div>
+                {view === "overview" ? (
+                  <a className="muted text-sm" href="/dashboard/issues">
+                    View all <ArrowUpRight size={13} />
+                  </a>
+                ) : (
+                  <Badge>{issues.length} reports</Badge>
+                )}
+              </div>
+              {view === "issues" && (
+                <>
+                  <div className="filters">
+                    <div className="search-wrap">
+                      <Search size={14} />
+                      <input
+                        aria-label="Search issues"
+                        placeholder="Search title or summary…"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                      />
+                    </div>
+                    <select
+                      aria-label="Filter status"
+                      value={status}
+                      onChange={(e) => setStatus(e.target.value)}
+                    >
+                      <option value="">All statuses</option>
+                      {[
+                        "draft",
+                        "published",
+                        "failed",
+                        "publishing",
+                        "publish_unknown",
+                      ].map((s) => (
+                        <option key={s} value={s}>
+                          {s.replaceAll("_", " ")}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      aria-label="Filter priority"
+                      value={priority}
+                      onChange={(e) => setPriority(e.target.value)}
+                    >
+                      <option value="">All priorities</option>
+                      {["low", "medium", "high"].map((s) => (
+                        <option key={s}>{s}</option>
+                      ))}
+                    </select>
+                    <select
+                      aria-label="Filter repository"
+                      value={repo}
+                      onChange={(e) => setRepo(e.target.value)}
+                    >
+                      <option value="">All repositories</option>
+                      {repoNames.map((s) => (
+                        <option key={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="result-note">
+                    Showing {filtered.length} of {issues.length} loaded reports.
+                    The API returns the latest 100.
+                  </div>
+                </>
+              )}
+              <IssueList
+                issues={view === "overview" ? issues.slice(0, 6) : filtered}
+                href={(i) => `/dashboard/issues/${i.id}`}
+                emptyAction={
+                  <Button asChild variant="secondary">
+                    <a href="/dashboard/new">
+                      <Plus size={14} />
+                      Create a report
+                    </a>
+                  </Button>
                 }
-              >
-                Reconcile remote outcome
-              </button>
+              />
+            </section>
+            {view === "overview" && (
+              <div className="stack">
+                <section className="panel">
+                  <div className="panel-header">
+                    <h3>
+                      <Github size={16} /> Repositories
+                    </h3>
+                    <Badge tone={repoError ? "amber" : "mint"}>
+                      {repoError
+                        ? "Action needed"
+                        : `${repos.length} authorized`}
+                    </Badge>
+                  </div>
+                  {repoError ? (
+                    <div className="panel-body">
+                      <p className="muted text-sm">{repoError}</p>
+                      <a
+                        href="/dashboard/integrations"
+                        className="inline-link text-sm"
+                      >
+                        Manage GitHub connection <ArrowUpRight size={12} />
+                      </a>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="panel-body">
+                        <p className="muted text-sm">
+                          {repos.length
+                            ? repos
+                                .slice(0, 3)
+                                .map((r) => r.fullName)
+                                .join(" · ")
+                            : "No repositories authorized yet."}
+                        </p>
+                      </div>
+                      <a
+                        href="/dashboard/integrations"
+                        className="repo-card inline-link text-sm"
+                      >
+                        Manage repositories <ArrowUpRight size={12} />
+                      </a>
+                    </>
+                  )}
+                </section>
+                <section className="panel">
+                  <div className="panel-header">
+                    <h3>
+                      <Fingerprint size={16} /> Your path to proof
+                    </h3>
+                  </div>
+                  {[
+                    [
+                      "01",
+                      "Capture with intention",
+                      "Select only what’s relevant.",
+                    ],
+                    [
+                      "02",
+                      "Review every claim",
+                      "Separate evidence from suggestions.",
+                    ],
+                    [
+                      "03",
+                      "Publish with confidence",
+                      "Check duplicates. Give approval.",
+                    ],
+                  ].map(([n, title, text]) => (
+                    <div key={n} className="workflow-step">
+                      <span>{n}</span>
+                      <div>
+                        <strong>{title}</strong>
+                        <p>{text}</p>
+                      </div>
+                    </div>
+                  ))}
+                </section>
+              </div>
             )}
-            {issue.githubUrl && (
-              <a href={issue.githubUrl} target="_blank" rel="noreferrer">
-                Open GitHub issue
-              </a>
-            )}
-          </article>
-        ))}
-      </section>
-      <section>
-        <h2>Extension pairing</h2>
-        <p>Only approve a code shown by your own extension.</p>
-        <label>
-          Code
-          <input
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            maxLength={8}
-          />
-        </label>
-        <button
-          disabled={busy}
-          onClick={() =>
-            void run(async () => {
-              if (
-                !window.confirm(
-                  "Approve this extension to analyze captures and manage drafts for one hour?",
-                )
-              )
-                return;
-              await api("pairing/confirm", { code, confirmed: true });
-              setMessage("Extension pairing approved.");
-            })
-          }
-        >
-          Approve pairing
-        </button>
-        <label>
-          Session ID to revoke
-          <input
-            value={sessionId}
-            onChange={(e) => setSessionId(e.target.value)}
-          />
-        </label>
-        <button
-          disabled={busy}
-          onClick={() =>
-            void run(async () => {
-              await api("pairing/revoke", { sessionId });
-              setMessage("Session revoked.");
-            })
-          }
-        >
-          Revoke session
-        </button>
-      </section>
-    </main>
+          </div>
+        </>
+      )}
+      <p className="footer-hint">
+        <Fingerprint size={13} /> Your evidence stays yours. You decide what
+        gets published.
+      </p>
+    </Transition>
   );
 }

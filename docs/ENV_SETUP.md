@@ -36,13 +36,13 @@ Create a GitHub App owned by the intended account/organization:
 - Allow HTTPS to `api.github.com` and `github.com`. Server-generated installation tokens remain server-side and are narrowed to the target repository. The user's current installation access is rechecked before each repository operation.
 - User OAuth token expiry/revocation fails closed and requires reconnection. Automatic OAuth refresh and multi-installation selection UI are future work.
 
-No live issue creation was attempted. Use a dedicated test repository and explicit authorization before a live publish smoke test.
+No live issue creation was attempted because App credentials were not configured. The current user authorized one smoke-test issue in tavish-crypto/devflow-ai if needed; use the actual product workflow once setup is complete. Future sessions require their own authorization context.
 
 ## Extension and deployment
 
 Set `ALLOWED_EXTENSION_ORIGINS` to exact origins such as `chrome-extension://YOUR_EXTENSION_ID`, comma-separated, no wildcard. Empty means no extension origins allowed. Pairing confirmation and publishing require dashboard auth; scoped extension tokens cannot perform them.
 
-`NEXT_PUBLIC_APP_URL` defaults in the example to `http://localhost:3000`; set the exact HTTPS origin in deployment. Set environment variables before production build when applicable, rebuild and restart. Run all checks before deployment. The minimal dashboard is functional test UI, not Kartik's final product.
+`NEXT_PUBLIC_APP_URL` defaults in the example to `http://localhost:3000`; set the exact HTTPS origin in deployment. Set environment variables before production build when applicable, rebuild and restart. Run all checks before deployment. The product dashboard requires validated sign-in; the public landing page and safe demo are available without service configuration. See PRODUCT_GUIDE for pairing and capture.
 
 The local PostgreSQL tests use `embedded-postgres` 18.4.0-beta.17 with checksum-verified registry artifacts. Its platform binary lifecycle script creates packaged symlinks. Linux x64 is validated. If CI runs as root, switch to a non-root runner rather than weakening PostgreSQL safeguards.
 

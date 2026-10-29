@@ -2,9 +2,9 @@
   "name": "@devflow/web",
   "private": true,
   "scripts": {
-    "dev": "NODE_USE_ENV_PROXY=1 next dev --hostname 0.0.0.0",
+    "dev": "next dev --hostname 0.0.0.0",
     "build": "next build --webpack",
-    "start": "NODE_USE_ENV_PROXY=1 next start --hostname 0.0.0.0",
+    "start": "next start --hostname 0.0.0.0",
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
@@ -17,10 +17,13 @@
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "server-only": "^0.0.1",
-    "zod": "4.6.7"
+    "zod": "4.6.7",
+    "@devflow/product": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0"
+    "@types/react-dom": "^19.0.0",
+    "@tailwindcss/postcss": "^4.1.18",
+    "tailwindcss": "^4.1.18"
   }
 }

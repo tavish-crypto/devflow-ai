@@ -1,9 +1,21 @@
-# Kartik handoff
+# Product handoff
 
-Build on feat/tavish-core and import schemas/types from @devflow/contracts. Do not rename frozen capture/report/issue fields or status values. The WXT React popup is scaffold only: build capture review, explicit consent, pairing start/poll, short-lived token storage and revocation UX. Use activeTab only when the user initiates capture; do not broaden permissions silently. No GitHub or provider secrets belong in extension code/storage.
+Kartik’s product branch starts at Tavish’s `86ef79f17cdb669eaebee00c5a5320e3b4fc4098` backend commit. Its ancestry and backend architecture are retained. The frontend uses existing contracts and services, with narrowly scoped account-management additions described in INTEGRATION_AUDIT.
 
-Use API_CONTRACT.md for exact JSON and auth rules. Keep pairingId and pollingSecret private, display only the short code for dashboard confirmation, poll every 3 seconds or slower, retain the returned scoped token only until expiry/revocation. A lost one-time response requires a new pairing. Extension scopes permit analysis/draft access only; publishing stays in the authenticated dashboard.
+The dashboard has landing, magic-link login, protected overview, issue explorer/detail/editor, manual capture, GitHub integration, settings, pairing approval, and a safe React demo. The extension is a WXT Manifest V3 side panel with real action-click capture, redaction/consent, analysis, provenance editor, local recovery/history, pairing, session handling, saved account history, and dashboard publication handoff.
 
-Replace the functional dashboard with polished login, review/redaction, editable ProofPack, repository selection, heuristic duplicates and persistent issue UI. Always display AI versus fallback mode and generated/unverified fields. Keep confirmed:true publication behind a clear user decision and preserve an issue's idempotency key across clicks/reloads. Unknown results require reconciliation, never a new publish key. Show safe errors without capture/provider secrets. Multiple GitHub App installations need a proper chooser.
+## External setup still required
 
-Provision real Supabase Auth/API credentials, run the reviewed migration, configure GitHub App and rotate exposed credentials before live testing. Do not interpret local tests as real provider validation. Extend tests for any new auth, scope or state transition; preserve RLS and server ownership filters.
+- Provision `apps/web/.env.local` privately, following ENV_SETUP. No real provider values were supplied or discovered in this checkout.
+- Apply the existing migration to your chosen Supabase project, configure Auth redirect/SMTP settings, and verify two-user isolation against that hosted project.
+- Configure and install the GitHub App with metadata read and issues read/write access on the intended repository. Complete user authorization.
+- Build the extension for the intended backend origin and allowlist its exact extension origin on that server.
+- Perform the live smoke procedure in DEMO. The user authorized one test issue in `tavish-crypto/devflow-ai` if needed; credentials are still required. No issue was created via `gh` as a substitute for testing the product.
+
+## Deliberate boundaries
+
+The extension cannot publish with its scoped bearer token. Final repository selection, duplicate search, and publication use the dashboard cookie session. No all-sites host permission, passive content script, console-reading claim, screenshot capture, browser history access, or additional backend provider was added.
+
+The API returns the newest 100 reports; counts and filters are explicitly scoped to that bounded set. Extension session tokens remain in trusted extension session storage and are cleared on browser restart. Local draft storage is device-local; disconnect clears it. Saved account reports remain in Supabase.
+
+Unknown GitHub outcomes remain non-retryable and require reconciliation or manual investigation. GitHub issue open/closed synchronization is not implemented by the inherited backend: the dashboard reports DevFlow publication state, not a fabricated live GitHub state. Multiple installation selection, automatic OAuth refresh, retention/deletion policy, edge abuse limits, and CSP nonces remain future production work.

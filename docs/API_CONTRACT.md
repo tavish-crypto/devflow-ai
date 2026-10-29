@@ -61,3 +61,14 @@ Remote permission/rate-limit failures preserve the draft as failed (`remoteResul
 On GitHub, set the OAuth callback to `/api/github/callback`. The installation setup URL can point to the dashboard; user OAuth authorization follows installation. No extension ever receives a GitHub or Supabase admin credential.
 
 Session cookies are refreshed by Next proxy and by route SSR clients. Do not authenticate using `getSession()` data alone. Pairing codes expire after 5 minutes; exchanged scoped sessions expire after 1 hour and can be revoked. Poll every 3 seconds or slower. Losing the one-time token requires a new pairing.
+
+## Product account-management endpoints
+
+- GET `/api/v1/account`: dashboard session only, normal user rate limit. Returns `{email:string|null,githubConnected:boolean,sessions:{id:UUID,expiresAt:ISOstring,revokedAt:ISOstring|null}[]}`. Session metadata is owner-filtered and bounded to the newest 50. No credential hashes, encrypted integration data, or bearer tokens are exposed.
+- POST `/api/v1/github/disconnect`: dashboard session and same-origin only; strict `{confirmed:true}` body. Removes only the current user’s stored GitHub connection and returns `{disconnected:true}`. Reports and the GitHub App installation remain; reconnect requires user authorization again.
+- POST `/auth/logout`: same-origin Supabase sign-out and 303 redirect to `/login`.
+- Successful `/auth/callback` now redirects to `/dashboard`.
+
+The product client uses the issue UUID itself as the stable publication `idempotencyKey`, across reloads and clients. Extension tokens remain unable to access the new account/disconnect endpoints or GitHub/publish/reconcile routes. The extension opens the saved dashboard issue for those operations.
+
+All pairing and account-session response timestamps are normalized from database timezone offsets to canonical UTC `Z` strings, matching the shared response schemas. The new account/disconnect schemas are exported from `packages/contracts`.

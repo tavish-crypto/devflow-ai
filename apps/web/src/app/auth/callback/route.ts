@@ -7,7 +7,7 @@ export async function GET(request: Request) {
     if (code) {
       const db = await serverClient();
       const { error } = await db.auth.exchangeCodeForSession(code);
-      if (!error) return NextResponse.redirect(`${appOrigin()}/`);
+      if (!error) return NextResponse.redirect(`${appOrigin()}/dashboard`);
     }
   } catch {
     /* Do not expose auth provider details. */
