@@ -1,0 +1,26 @@
+{
+  "name": "@devflow/web",
+  "private": true,
+  "scripts": {
+    "dev": "NODE_USE_ENV_PROXY=1 next dev --hostname 0.0.0.0",
+    "build": "next build --webpack",
+    "start": "NODE_USE_ENV_PROXY=1 next start --hostname 0.0.0.0",
+    "typecheck": "next typegen && tsc --noEmit"
+  },
+  "dependencies": {
+    "@devflow/contracts": "workspace:*",
+    "@google/genai": "2.32.0",
+    "@octokit/auth-app": "8.3.1",
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.118.0",
+    "next": "16.4.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "server-only": "^0.0.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0"
+  }
+}
