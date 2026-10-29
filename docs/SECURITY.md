@@ -27,3 +27,13 @@ GitHub user access expiry/revocation fails closed; reconnect is required, and au
 Treat credentials shared in chat as exposed. Rotate the supplied Supabase database password and Gemini credential; store replacements only in approved environment secret settings. Use TLS verification and URL-encoded connection passwords. Never commit secrets or disable package checksum/TLS verification.
 
 Report vulnerabilities privately to the repository owner; do not publish private captures or secrets in public issues.
+
+## Product client boundaries
+
+The extension requests only activeTab, scripting, sidePanel, storage, and the exact configured backend host. No blanket site hosts, passive content scripts, console collection, screenshot sharing, or browser-history access are implemented. Its capture message handler accepts only the extension's own side-panel URL, rejecting content-script senders. Selections remain untrusted data and are rendered as escaped text.
+
+Pairing/session secrets stay in trusted `chrome.storage.session`; recovery drafts stay in device-local storage, never sync storage. Local recovery is not encrypted against someone with access to the same unlocked browser profile. Dashboard recovery keys include account identity. Clear/disconnect controls require confirmation, and dashboard settings can actually revoke server sessions before a device token is removed.
+
+Account metadata and GitHub disconnect are server-only authenticated operations, with explicit current-user filters and no credential material in their response. Browser artifacts are checked separately with `scripts/check-browser-bundles.mjs`; pattern scans are defense in depth, not a proof that arbitrary secrets can never be included.
+
+The UI requires saved repository/report state, an actual duplicate lookup, distinctness acknowledgement, and confirmation before a publish request. There is no automatic publication on navigation or analysis. The issue UUID is the stable idempotency key. Transport failures block another publish until reloading authoritative state, and `publish_unknown` remains reconciliation-only.

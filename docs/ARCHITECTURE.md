@@ -1,6 +1,6 @@
 # Architecture
 
-A pnpm strict-TypeScript workspace contains a Next.js App Router backend and minimal dashboard, a WXT React extension scaffold, and shared runtime Zod contracts. Supabase Auth establishes dashboard identity; Next SSR refreshes and writes session cookies. Request handlers validate shape, size, origin, consent, identity and ownership before processing.
+A pnpm strict-TypeScript workspace contains a Next.js App Router backend/dashboard, a WXT React Manifest V3 side panel, shared runtime Zod contracts, and a shared product UI/API client package. Supabase Auth establishes dashboard identity; Next SSR refreshes and writes session cookies. Request handlers validate shape, size, origin, consent, identity and ownership before processing.
 
 PostgreSQL is the durable source of truth. Browser users can only select their own profiles, issues, evidence and events under RLS. Integration credentials, pairing hashes and token hashes have no browser grants or policies. Writes use narrowly scoped definer functions executable only by service_role; the server obtains the user from a validated session before supplying p_user. Every use of the service role must retain explicit user_id filters. Original capture evidence is retained separately from the editable report.
 
@@ -13,3 +13,26 @@ Publication locks the issue row, reserves its UUID idempotency key and status in
 Pairing uses a 32-byte polling secret separately from a short display code. Only hashes of polling/session secrets are stored. A dashboard user explicitly approves the display code; a locked, one-use exchange creates an hour-long scoped session. Revocation and expiration are checked per request. Database rate limits work across server workers.
 
 Live provider credentials and deployed configuration are separate from local tests. No hosted database changes, live GitHub issue creation, deployment or production certification are implied by a passing build.
+
+```mermaid
+flowchart LR
+  P[Selected webpage text] -->|Toolbar action + activeTab| E[MV3 worker / side panel]
+  E --> L[Local capture / draft recovery]
+  E -->|Review + explicit consent; scoped token| A[Next /api/v1/analyze]
+  A -->|Bounded capture, no tools| G[Gemini]
+  G --> V[Schema validation / grounded evidence / fallback]
+  V --> F[Editable ProofPack]
+  F -->|Save draft| D[(Supabase PostgreSQL)]
+  E -->|Open saved issue ID| W[Protected Next dashboard]
+  U[Supabase Auth magic link] -->|Validated SSR cookie| W
+  W -->|Approve matching code| S[One-time pairing exchange]
+  S -->|1-hour scoped token| E
+  W --> R[Authorized repository / possible duplicates]
+  R -->|Explicit publish confirmation| T[Transactional publish claim]
+  T -->|Repository-scoped App token| H[GitHub Issues]
+  H -->|Issue number + actual URL| D
+  T -->|Uncertain outcome| X[Publish unknown / explicit reconciliation]
+  D --> W
+```
+
+Frontend state is validated at transport boundaries. Web recovery is keyed by validated account ID and issue version; extension capture/editor recovery and a bounded archive use local storage, while scoped secrets remain in trusted session storage. Browser code never imports server-only provider modules. Self-hosted fonts and the shared design system require no additional external service.
