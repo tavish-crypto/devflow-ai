@@ -1,0 +1,22 @@
+{
+  "name": "@devflow/extension",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "build": "wxt build",
+    "typecheck": "wxt prepare && tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "@devflow/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "wxt": "0.21.5",
+    "@wxt-dev/module-react": "^1.1.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0"
+  },
+  "version": "0.1.0"
+}

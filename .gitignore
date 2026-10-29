@@ -1,0 +1,11 @@
+node_modules/
+.next/
+.output/
+.wxt/
+coverage/
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+.DS_Store
+**/next-env.d.ts

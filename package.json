@@ -1,0 +1,29 @@
+{
+  "name": "devflow-ai",
+  "private": true,
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @devflow/web dev",
+    "build": "pnpm --filter @devflow/web build && pnpm --filter @devflow/extension build",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "pnpm -r typecheck",
+    "test": "vitest run",
+    "test:db": "node scripts/test-db.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "embedded-postgres": "18.4.0-beta.17",
+    "eslint": "^9.0.0",
+    "pg": "^8.16.0",
+    "prettier": "^3.0.0",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.0.0",
+    "vitest": "5.0.5"
+  },
+  "type": "module"
+}

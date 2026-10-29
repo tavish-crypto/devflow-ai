@@ -1,0 +1,64 @@
+body {
+  font-family: system-ui;
+  background: #f7f9fc;
+  color: #142033;
+  max-width: 1050px;
+  margin: 40px auto;
+  padding: 20px;
+}
+section {
+  background: white;
+  padding: 24px;
+  margin: 20px 0;
+  border: 1px solid #dce2ec;
+  border-radius: 12px;
+}
+label {
+  display: block;
+  margin: 12px 0;
+}
+input,
+textarea,
+select,
+button {
+  font: inherit;
+  padding: 9px;
+  border: 1px solid #a7b3c4;
+  border-radius: 6px;
+}
+input:not([type="checkbox"]),
+textarea {
+  display: block;
+  width: 95%;
+  margin-top: 5px;
+}
+textarea {
+  min-height: 110px;
+}
+button {
+  background: #173e81;
+  color: white;
+  cursor: pointer;
+  margin: 6px 8px 6px 0;
+}
+button:disabled {
+  opacity: 0.5;
+}
+a {
+  color: #174fa0;
+  margin-right: 16px;
+}
+pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+small {
+  color: #42546e;
+}
+article {
+  padding: 15px 0;
+  border-top: 1px solid #ddd;
+}
+.error {
+  color: #922;
+}
