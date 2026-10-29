@@ -11,6 +11,7 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     reducedMotion: "reduce",
+    launchOptions: { executablePath: process.env.DEVFLOW_TEST_EXECUTABLE_PATH },
   },
   webServer: {
     command: "node tests/e2e/server.mjs",
